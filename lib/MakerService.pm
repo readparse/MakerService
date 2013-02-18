@@ -83,8 +83,5 @@ get '/service/' => sub {
   template 'service/index'
 };
 
-get '/service/' => sub {
-  template 'service/index'
-};
 
 1;
