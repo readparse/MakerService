@@ -1,6 +1,5 @@
 package MakerService;
 use Dancer ':syntax';
-use Template;
 use Data::Maker;
 use Data::Maker::Field::Person::LastName;
 use Data::Maker::Field::Person::FirstName;
