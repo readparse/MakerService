@@ -6,4 +6,6 @@ chmod 755 /usr/bin/cpanm
 cpanm Moose
 cpanm Dancer
 cpanm Data::Maker
+cpanm JSON
+cpanm YAML
 
