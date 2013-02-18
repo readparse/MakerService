@@ -1,4 +1,4 @@
-yum -y install perl-devel gcc make 'gcc-c++' git
+yum -y install perl-devel gcc make 'gcc-c++'
 if [ ! -e /usr/bin/cpanm ]
   then wget -O /usr/bin/cpanm http://cpanmin.us
 fi
