@@ -62,8 +62,9 @@ get '/person/count' => sub {
 	return $count;
 };
 
-get '/person/generate/:count' => sub {
-	my $count = params->{count};
+get qr{/person/generate/(\d+)} => sub {
+	#my $count = params->{count};
+	my ($count) = splat;
 	$maker->record_count($count);
 	while(my $record = $maker->next_record) {
 		my $hash = {
