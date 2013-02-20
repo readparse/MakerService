@@ -36,6 +36,13 @@ my $maker = Data::Maker->new(
      class => 'Data::Maker::Field::Person::FirstName',
    },
    {
+     name => 'ssn',
+     class => 'Data::Maker::Field::Format',
+		 args => {
+		   format => '\d\d\d-\d\d-\d\d\d\d'
+     }
+   },
+   {
      name => 'dob',
      class => 'Data::Maker::Field::DateTime', 
      args => {
@@ -71,11 +78,12 @@ get qr{/person/generate/(\d+)} => sub {
 			id => $record->id->value, 
 			firstname => $record->firstname->value, 
 			lastname => $record->lastname->value, 
+			ssn => $record->ssn->value, 
 			dob => $record->dob->value->mdy('/'), 
 		};
 		$person_cache->{$hash->{id}} = $hash;
 	}
-	forward '/person/';
+	redirect '/person/';
 };
 
 get '/person/flush' => sub {
@@ -91,7 +99,7 @@ get '/person/' => sub {
       push(@out, $person); 
     }
   }
-  return \@out;
+  return { person => \@out };
 };
 
 get '/person/deleted' => sub {
@@ -100,7 +108,7 @@ get '/person/deleted' => sub {
 		my $person = $person_cache->{$key};
 		push(@out, $person) if $person->{deleted};
 	}
-	return \@out;
+	return { person => \@out };
 };
 
 get '/person/delete/:id' => sub {
@@ -130,6 +138,7 @@ get '/person/:id' => sub {
       id => $id, 
       firstname => $record->firstname->value, 
       lastname => $record->lastname->value, 
+			ssn => $record->ssn->value, 
       dob => $record->dob->value->mdy('/'), 
     };
     $person_cache->{$id} = $person_hash;
