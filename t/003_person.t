@@ -98,9 +98,7 @@ sub is_hash_ref {
 
 sub parse_json_response {
 	my $uri = shift;
-		print "URI: $uri\n";
 	my $r = dancer_response GET => $uri;
-		print Dumper($r);
 	if (my $content = $r->content) {
 		if (my $data = from_json($content)) {
 			return $data;
