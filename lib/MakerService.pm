@@ -15,7 +15,7 @@ get '/' => sub {
 };
 
 my $person_cache = {};
-my $maker = Data::Maker->new(
+my $person_maker = Data::Maker->new(
  record_count => 10000000,
  fields => [
    {
@@ -53,7 +53,6 @@ my $maker = Data::Maker->new(
  ]
 );
 
-
 get '/person' => sub {
   redirect '/person/';
 };
@@ -72,8 +71,8 @@ get '/person/count' => sub {
 get qr{/person/generate/(\d+)} => sub {
 	#my $count = params->{count};
 	my ($count) = splat;
-	$maker->record_count($count);
-	while(my $record = $maker->next_record) {
+	$person_maker->record_count($count);
+	while(my $record = $person_maker->next_record) {
 		my $hash = {
 			id => $record->id->value, 
 			firstname => $record->firstname->value, 
@@ -132,8 +131,8 @@ get '/person/:id' => sub {
     }
     $out_hash = $cached;
   } else  {
-		$maker->record_count(10000000);
-    my $record = $maker->next_record;
+		$person_maker->record_count(10000000);
+    my $record = $person_maker->next_record;
     my $person_hash = { 
       id => $id, 
       firstname => $record->firstname->value, 
