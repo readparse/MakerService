@@ -7,6 +7,7 @@ use Data::Maker::Field::DateTime;
 use Data::Maker::Field::Code;
 use Data::Maker::Field::Lorem;
 use Data::Maker::Field::Set;
+use Data::Maker::Field::File;
 use Data::Dumper;
 use Data::GUID;
 
@@ -15,6 +16,47 @@ our $VERSION = '0.1';
 get '/' => sub {
     template 'index';
 };
+
+my $contract_cache = {};
+my $contract_maker = Data::Maker->new(
+ record_count => 10000000,
+ fields => [
+   {
+     name => 'id',
+     class => 'Data::Maker::Field::Code',
+		 args => {
+		   code => sub {
+			   return Data::GUID->new->as_string;
+       }
+     }
+   },
+   {
+     name => 'contract_number',
+     class => 'Data::Maker::Field::Set',
+		 args => {
+		   set => [ 100..6000 ]
+		 }
+   },
+   {
+     name => 'vendor',
+     class => 'Data::Maker::Field::File',
+		 args => {
+		   filename => 'data/vendors.txt'
+		 }
+   },
+   {
+     name => 'contract_description',
+     class => 'Data::Maker::Field::Code',
+		 args => {
+		   code => sub {
+			   my $word_count = Data::Maker::Field::Set->new( name => 'dmfs_contract_description', set => [12..30])->generate_value;
+				 my $words = Data::Maker::Field::Lorem->new( name => 'dmfs_contract_desc_lorem', words => $word_count)->generate_value;
+				 return ucfirst($words);
+			 }
+		 }
+   },
+ ]
+);
 
 my $news_cache = {};
 my $news_maker = Data::Maker->new(
@@ -105,10 +147,12 @@ my $person_maker = Data::Maker->new(
 my $maker_index = {
 	person => $person_maker,
 	news => $news_maker,
+	contract => $contract_maker,
 };
 my $cache_index = {
 	person => $person_cache,
 	news => $news_cache,
+	contract => $contract_cache,
 };
 
 get qr{/(\w+)} => sub {
@@ -151,6 +195,13 @@ get qr{/(\w+)/generate/(\d+)} => sub {
 				headline => $record->headline->value, 
 				body => $record->body->value, 
 				posted => $record->posted->value->mdy('/'), 
+			};
+		} elsif ($noun eq 'contract') {
+			$hash = {
+				id => $record->id->value, 
+				contract_number => $record->contract_number->value, 
+				vendor => $record->vendor->value, 
+				contract_description => $record->contract_description->value, 
 			};
 
 		}
@@ -235,6 +286,13 @@ get qr{/(\w+)/(.*)} => sub {
 	      body => $record->body->value, 
 	      posted => $record->posted->value->mdy('/'), 
 	    };
+		} elsif ($noun eq 'contract') {
+			$hash = {
+				id => $id,
+				contract_number => $record->contract_number->value, 
+				vendor => $record->vendor->value, 
+				contract_description => $record->contract_description->value, 
+			};
 		}
     $cache->{$id} = $hash;
     $out_hash = $hash;
