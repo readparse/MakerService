@@ -93,95 +93,146 @@ my $person_maker = Data::Maker->new(
  ]
 );
 
-get '/person' => sub {
-  redirect '/person/';
+my $maker_index = {
+	person => $person_maker,
+	news => $news_maker,
+};
+my $cache_index = {
+	person => $person_cache,
+	news => $news_cache,
 };
 
-get '/person/count' => sub {
+get qr{/(\w+)} => sub {
+	my ($noun) = splat;
+	warn "here I am running /$noun\n";
+  redirect "/$noun/";
+};
+
+get qr{/(\w+)/count} => sub {
+	my ($noun) = splat;
 	my $count = {
 		active => 0,
 		deleted => 0
 	};
-	for my $key(keys(%{$person_cache})) {
-		$person_cache->{$key}->{deleted} ? $count->{deleted}++ : $count->{active}++;
+	my $cache = $cache_index->{$noun};
+	for my $key(keys(%{$cache})) {
+		$cache->{$key}->{deleted} ? $count->{deleted}++ : $count->{active}++;
 	}
 	return $count;
 };
 
-get qr{/person/generate/(\d+)} => sub {
-	#my $count = params->{count};
-	my ($count) = splat;
-	$person_maker->record_count($count);
-	while(my $record = $person_maker->next_record) {
-		my $hash = {
-			id => $record->id->value, 
-			firstname => $record->firstname->value, 
-			lastname => $record->lastname->value, 
-			ssn => $record->ssn->value, 
-			dob => $record->dob->value->mdy('/'), 
-		};
-		$person_cache->{$hash->{id}} = $hash;
+get qr{/(\w+)/generate/(\d+)} => sub {
+	my ($noun, $count) = splat;
+	my $maker = $maker_index->{$noun};
+	my $cache = $cache_index->{$noun};
+	$maker->record_count($count);
+	while(my $record = $maker->next_record) {
+		my $hash;
+		if ($noun eq 'person') {
+			my $hash = {
+				id => $record->id->value, 
+				firstname => $record->firstname->value, 
+				lastname => $record->lastname->value, 
+				ssn => $record->ssn->value, 
+				dob => $record->dob->value->mdy('/'), 
+			};
+
+		} elsif ($noun eq 'news') {
+			my $hash = {
+				id => $record->id->value, 
+				firstname => $record->firstname->value, 
+				lastname => $record->lastname->value, 
+				ssn => $record->ssn->value, 
+				dob => $record->dob->value->mdy('/'), 
+			};
+
+		}
+		$cache->{$hash->{id}} = $hash;
 	}
-	redirect '/person/';
+	redirect "/$noun/";
 };
 
-get '/person/flush' => sub {
-	$person_cache = {};
-	redirect '/person/';
+get qr{/(\w+)/flush/} => sub {
+	my ($noun) = splat;
+	my $cache = $cache_index->{$noun};
+	$cache = {};
+	redirect "/$noun/";
 };
 
-get '/person/' => sub {
+get qr{/(\w+)/} => sub {
+	my ($noun) = splat;
   my @out;
-  for my $key(keys(%{$person_cache})) {
-    my $person = $person_cache->{$key};
-    unless($person->{deleted}) {
-      push(@out, $person); 
+	my $cache = $cache_index->{$noun};
+  for my $key(keys(%{$cache})) {
+    my $record = $cache->{$key};
+    unless($record->{deleted}) {
+      push(@out, $record); 
     }
   }
-  return { person => \@out };
+  return { $noun => \@out };
 };
 
-get '/person/deleted' => sub {
+get qr{/(\w+)/deleted} => sub {
+	my ($noun) = splat;
 	my @out;
-	for my $key(keys(%{$person_cache})) {
-		my $person = $person_cache->{$key};
-		push(@out, $person) if $person->{deleted};
+	my $cache = $cache_index->{$noun};
+	for my $key(keys(%{$cache})) {
+		my $record = $cache->{$key};
+		push(@out, $record) if $record->{deleted};
 	}
-	return { person => \@out };
+	return { $noun => \@out };
 };
 
-get '/person/delete/:id' => sub {
+get qr{/(\w+)/delete/:id} => sub {
+	my ($noun) = splat;
   my $id = params->{id};
-  $person_cache->{$id}->{deleted} = 1;
-  redirect '/person/';
+	my $cache = $cache_index->{$noun};
+  $cache->{$id}->{deleted} = 1;
+  redirect "/$noun/";
 };
 
-get '/person/undelete/:id' => sub {
+get qr{/(\w+)/undelete/:id} => sub {
+	my ($noun) = splat;
   my $id = params->{id};
-  delete $person_cache->{$id}->{deleted};
-  redirect "/person/$id";
+	my $cache = $cache_index->{$noun};
+  delete $cache->{$id}->{deleted};
+  redirect "/$noun/$id";
 };
 
-get '/person/:id' => sub {
+get qr{/(\w+)/:id} => sub {
+	my ($noun) = splat;
   my $id = params->{id};
   my $out_hash;
-  if (my $cached = $person_cache->{$id}) {
+	my $cache = $cache_index->{$noun};
+  if (my $cached = $cache->{$id}) {
     if ($cached->{deleted}) {
       return {};
     }
     $out_hash = $cached;
   } else  {
-		$person_maker->record_count(10000000);
-    my $record = $person_maker->next_record;
-    my $person_hash = { 
-      id => $id, 
-      firstname => $record->firstname->value, 
-      lastname => $record->lastname->value, 
-			ssn => $record->ssn->value, 
-      dob => $record->dob->value->mdy('/'), 
-    };
-    $person_cache->{$id} = $person_hash;
-    $out_hash = $person_hash;
+		my $maker = $maker_index->{$noun};
+		$maker->record_count(10000000);
+    my $record = $maker->next_record;
+		my $hash;
+		if ($noun eq 'person') {
+    	$hash = { 
+	      id => $id, 
+	      firstname => $record->firstname->value, 
+	      lastname => $record->lastname->value, 
+				ssn => $record->ssn->value, 
+	      dob => $record->dob->value->mdy('/'), 
+	    };
+		} elsif ($noun eq 'news') {
+    	$hash = { 
+	      id => $id, 
+	      firstname => $record->firstname->value, 
+	      lastname => $record->lastname->value, 
+				ssn => $record->ssn->value, 
+	      dob => $record->dob->value->mdy('/'), 
+	    };
+		}
+    $cache->{$id} = $hash;
+    $out_hash = $hash;
   } 
   return $out_hash;
 };
