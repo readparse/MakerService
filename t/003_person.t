@@ -1,4 +1,4 @@
-use Test::More tests => 16;
+use Test::More tests => 32;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -8,10 +8,12 @@ use JSON;
 use MakerService;
 use Dancer::Test;
 
-our $noun = 'person';
-maker_test();
-#$noun = 'news_story';
-#maker_test();
+our $noun;
+for my $i (qw( person news )) {
+	$noun = $i;
+	print "======> Running tests for \"$noun\"\n";
+	maker_test();
+}
 
 sub maker_test {
 ######## Make sure the list starts out empty
