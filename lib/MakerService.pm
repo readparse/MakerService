@@ -206,7 +206,7 @@ get qr{/(\w+)/undelete/(.*)} => sub {
   redirect "/$noun/$id";
 };
 
-get qr{/(\w+)/(\w+)} => sub {
+get qr{/(\w+)/(.*)} => sub {
 	my ($noun, $id) = splat;
   my $out_hash;
 	my $cache = $cache_index->{$noun};

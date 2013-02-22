@@ -54,6 +54,10 @@ ok( got_record_list_with_x_members($ten_records, 10), 'Generated 10 records');
 ######## Check the count again
 ok( check_count(10,0), 'The active count is 10');
 
+######## Grab one of the records from this list and pull back a record by ID, REST style
+my $sixth_record = $ten_records->{$noun}->[5];
+my $sixth = parse_json_response("/$noun/$sixth_record->{id}");
+
 ######## Delete a couple of records and check the count each time
 for my $i (1,2) {
 	my $this = $ten_records->{$noun}->[$i - 1];
