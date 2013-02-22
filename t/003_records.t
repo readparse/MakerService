@@ -11,8 +11,8 @@ use Dancer::Test;
 our $noun;
 for my $i (qw( person news contract )) {
 	$noun = $i;
-	print "======> Running tests for \"$noun\"\n";
-	maker_test();
+	#print "======> Running tests for \"$noun\"\n";
+	subtest "Ran tests for \"$noun\"" => sub { maker_test() };
 }
 
 sub maker_test {
@@ -32,7 +32,7 @@ sub maker_test {
 	my $cached_record = parse_json_response("/$noun/42");
 	ok( $cached_record->{id} == 42, 'Got the right ID for cached record');
 	ok( check_count(1,0), 'Active count is still 1, deleted count is still 0');
-	ok( same_record( $new_record, $cached_record ), 'New record and cached record are identical' );
+	is_deeply( $new_record, $cached_record, 'New record and cached record are identical' );
 	
 	
 	######## Generate 2 records and make sure you get back 3 (including the one you made before)
@@ -54,15 +54,10 @@ sub maker_test {
 	######## Check the count again
 	ok( check_count(10,0), 'The active count is 10');
 	
-	my $all_records_match = 1;
 	for my $record(@{$ten_records->{$noun}}) {
 		my $fresh_record = parse_json_response("/$noun/$record->{id}");
-		unless(same_record($fresh_record, $record)) {
-			$all_records_match = 0;
-			last;
-		}
+		is_deeply($fresh_record, $record, "$fresh_record->{id} matches list record");
 	}
-	ok( $all_records_match, 'All records retrieved by ID match the same records retrieved in a list');
 	
 	######## Grab one of the records from this list and pull back a record by ID, REST style
 	my $sixth_record = $ten_records->{$noun}->[5];
@@ -90,14 +85,6 @@ sub maker_test {
 }
 
 done_testing();
-
-sub same_record {
-	my ($new, $cached) = @_;
-	for my $key(keys(%{$new})) {
-		($new->{$key} eq $cached->{$key}) || return;
-	}
-	return 1;
-}
 
 sub check_count {
 	my ($active, $deleted) = @_;
