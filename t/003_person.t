@@ -1,4 +1,4 @@
-use Test::More tests => 32;
+use Test::More tests => 34;
 use strict;
 use warnings;
 use Data::Dumper;
@@ -53,6 +53,16 @@ ok( got_record_list_with_x_members($ten_records, 10), 'Generated 10 records');
 
 ######## Check the count again
 ok( check_count(10,0), 'The active count is 10');
+
+my $all_records_match = 1;
+for my $record(@{$ten_records->{$noun}}) {
+	my $fresh_record = parse_json_response("/$noun/$record->{id}");
+	unless(same_record($fresh_record, $record)) {
+		$all_records_match = 0;
+		last;
+	}
+}
+ok( $all_records_match, 'All records retrieved by ID match the same records retrieved in a list');
 
 ######## Grab one of the records from this list and pull back a record by ID, REST style
 my $sixth_record = $ten_records->{$noun}->[5];
