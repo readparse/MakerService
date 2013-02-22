@@ -14,6 +14,46 @@ get '/' => sub {
     template 'index';
 };
 
+my $news_cache = {};
+my $news_maker = Data::Maker->new(
+ record_count => 10000000,
+ fields => [
+   {
+     name => 'id',
+     class => 'Data::Maker::Field::Code',
+		 args => {
+		   code => sub {
+			   return Data::GUID->new->as_string;
+       }
+     }
+   },
+   {
+     name => 'lastname',
+     class => 'Data::Maker::Field::Person::LastName',
+   },
+   {
+     name => 'firstname',
+     class => 'Data::Maker::Field::Person::FirstName',
+   },
+   {
+     name => 'ssn',
+     class => 'Data::Maker::Field::Format',
+		 args => {
+		   format => '\d\d\d-\d\d-\d\d\d\d'
+     }
+   },
+   {
+     name => 'dob',
+     class => 'Data::Maker::Field::DateTime', 
+     args => {
+       start => 1920,
+       end => 1994,
+     }
+   }
+ ]
+);
+
+
 my $person_cache = {};
 my $person_maker = Data::Maker->new(
  record_count => 10000000,
