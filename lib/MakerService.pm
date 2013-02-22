@@ -5,6 +5,8 @@ use Data::Maker::Field::Person::LastName;
 use Data::Maker::Field::Person::FirstName;
 use Data::Maker::Field::DateTime;
 use Data::Maker::Field::Code;
+use Data::Maker::Field::Lorem;
+use Data::Maker::Field::Set;
 use Data::Dumper;
 use Data::GUID;
 
@@ -28,26 +30,33 @@ my $news_maker = Data::Maker->new(
      }
    },
    {
-     name => 'lastname',
-     class => 'Data::Maker::Field::Person::LastName',
-   },
-   {
-     name => 'firstname',
-     class => 'Data::Maker::Field::Person::FirstName',
-   },
-   {
-     name => 'ssn',
-     class => 'Data::Maker::Field::Format',
+     name => 'headline',
+     class => 'Data::Maker::Field::Code',
 		 args => {
-		   format => '\d\d\d-\d\d-\d\d\d\d'
-     }
+		   code => sub {
+			   my $words = Data::Maker::Field::Set->new( name => 'dmfs_headline', set => [5..9])->generate_value;
+				 my $headline = Data::Maker::Field::Lorem->new( name => 'dmfs_headline_lorem', words => $words)->generate_value;
+				 $headline =~ s/\b(\w+)\b/ucfirst($1)/ge;
+				 return $headline;
+			 }
+		 }
    },
    {
-     name => 'dob',
+     name => 'body',
+     class => 'Data::Maker::Field::Code',
+		 args => {
+		   code => sub {
+			   my $paragraphs = Data::Maker::Field::Set->new( name => 'dmfs_body', set => [2..8])->generate_value;
+				 return Data::Maker::Field::Lorem->new( name => 'dmfs_body_lorem', paragraphs => $paragraphs)->generate_value;
+			 }
+		 }
+   },
+   {
+     name => 'posted',
      class => 'Data::Maker::Field::DateTime', 
      args => {
-       start => 1920,
-       end => 1994,
+       start => DateTime->now->subtract_duration( DateTime::Duration->new( days => 120) ),
+       end => DateTime->now,
      }
    }
  ]
@@ -104,7 +113,6 @@ my $cache_index = {
 
 get qr{/(\w+)} => sub {
 	my ($noun) = splat;
-	warn "here I am running /$noun\n";
   redirect "/$noun/";
 };
 
@@ -140,10 +148,9 @@ get qr{/(\w+)/generate/(\d+)} => sub {
 		} elsif ($noun eq 'news') {
 			$hash = {
 				id => $record->id->value, 
-				firstname => $record->firstname->value, 
-				lastname => $record->lastname->value, 
-				ssn => $record->ssn->value, 
-				dob => $record->dob->value->mdy('/'), 
+				headline => $record->headline->value, 
+				body => $record->body->value, 
+				posted => $record->posted->value->mdy('/'), 
 			};
 
 		}
@@ -224,10 +231,9 @@ get qr{/(\w+)/(\w+)} => sub {
 		} elsif ($noun eq 'news') {
     	$hash = { 
 	      id => $id, 
-	      firstname => $record->firstname->value, 
-	      lastname => $record->lastname->value, 
-				ssn => $record->ssn->value, 
-	      dob => $record->dob->value->mdy('/'), 
+	      headline => $record->headline->value, 
+	      body => $record->body->value, 
+	      posted => $record->posted->value->mdy('/'), 
 	    };
 		}
     $cache->{$id} = $hash;
