@@ -129,7 +129,7 @@ get qr{/(\w+)/generate/(\d+)} => sub {
 	while(my $record = $maker->next_record) {
 		my $hash;
 		if ($noun eq 'person') {
-			my $hash = {
+			$hash = {
 				id => $record->id->value, 
 				firstname => $record->firstname->value, 
 				lastname => $record->lastname->value, 
@@ -138,7 +138,7 @@ get qr{/(\w+)/generate/(\d+)} => sub {
 			};
 
 		} elsif ($noun eq 'news') {
-			my $hash = {
+			$hash = {
 				id => $record->id->value, 
 				firstname => $record->firstname->value, 
 				lastname => $record->lastname->value, 
@@ -152,10 +152,12 @@ get qr{/(\w+)/generate/(\d+)} => sub {
 	redirect "/$noun/";
 };
 
-get qr{/(\w+)/flush/} => sub {
+get qr{/(\w+)/flush} => sub {
 	my ($noun) = splat;
 	my $cache = $cache_index->{$noun};
-	$cache = {};
+	for my $key(keys(%{$cache})) {
+		delete $cache->{$key};
+	}
 	redirect "/$noun/";
 };
 
@@ -183,25 +185,22 @@ get qr{/(\w+)/deleted} => sub {
 	return { $noun => \@out };
 };
 
-get qr{/(\w+)/delete/:id} => sub {
-	my ($noun) = splat;
-  my $id = params->{id};
+get qr{/(\w+)/delete/(.*)} => sub {
+	my ($noun, $id) = splat;
 	my $cache = $cache_index->{$noun};
   $cache->{$id}->{deleted} = 1;
   redirect "/$noun/";
 };
 
-get qr{/(\w+)/undelete/:id} => sub {
-	my ($noun) = splat;
-  my $id = params->{id};
+get qr{/(\w+)/undelete/(.*)} => sub {
+	my ($noun, $id) = splat;
 	my $cache = $cache_index->{$noun};
   delete $cache->{$id}->{deleted};
   redirect "/$noun/$id";
 };
 
-get qr{/(\w+)/:id} => sub {
-	my ($noun) = splat;
-  my $id = params->{id};
+get qr{/(\w+)/(\w+)} => sub {
+	my ($noun, $id) = splat;
   my $out_hash;
 	my $cache = $cache_index->{$noun};
   if (my $cached = $cache->{$id}) {
