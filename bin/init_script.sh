@@ -8,4 +8,4 @@ cpanm Dancer
 cpanm Data::Maker
 cpanm JSON
 cpanm YAML
-
+cpanm Data::GUID
